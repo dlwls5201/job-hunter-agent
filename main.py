@@ -8,12 +8,12 @@ from tools import web_search_tool
 
 dotenv.load_dotenv()
 
-
-resume_knowledge = TextFileKnowledgeSource(
-    file_paths=[
-        "resume.txt",
-    ]
-)
+def create_resume_knowledge(agent_name: str):
+    """각 에이전트마다 고유한 knowledge source 생성"""
+    return TextFileKnowledgeSource(
+        file_paths=["resume.txt"],
+        collection_name=f"resume_{agent_name}"
+    )
 
 @CrewBase
 class JobHunterCrew:
@@ -21,70 +21,69 @@ class JobHunterCrew:
     @agent
     def job_search_agent(self):
         return Agent(
-            config=self.agent_config['job_search_agent'],
+            config=self.agents_config['job_search_agent'],
             tools=[web_search_tool],
         )
 
     @agent
     def job_matching_agent(self):
         return Agent(
-            config=self.agent_config['job_matching_agent'],
-            knowledge_sources=[resume_knowledge],
+            config=self.agents_config['job_matching_agent'],
+            knowledge_sources=[create_resume_knowledge("job_matching")],
         )
 
     @agent
     def resume_optimization_agent(self):
         return Agent(
-            config=self.agent_config['resume_optimization_agent'],
-            knowledge_sources=[resume_knowledge],
+            config=self.agents_config['resume_optimization_agent'],
+            knowledge_sources=[create_resume_knowledge("resume_optimization")],
         )
 
     @agent
     def company_research_agent(self):
         return Agent(
-            config=self.agent_config['company_research_agent'],
-            knowledge_sources=[resume_knowledge],
+            config=self.agents_config['company_research_agent'],
             tools=[web_search_tool],
         )
 
     @agent
     def interview_prep_agent(self):
         return Agent(
-            config=self.agent_config['interview_prep_agent'],
-            knowledge_sources=[resume_knowledge],
+            config=self.agents_config['interview_prep_agent'],
+            knowledge_sources=[create_resume_knowledge("interview_prep")],
         )
 
     @task
     def job_extraction_task(self):
         return Task(
-            config=self.task_config['job_extraction_task'],
+            config=self.tasks_config['job_extraction_task'],
             output_pydantic=JobList,
         )
 
     @task
     def job_matching_task(self):
         return Task(
-            config=self.task_config['job_matching_task'],
+            config=self.tasks_config['job_matching_task'],
             output_pydantic=RankedJobList,
         )
 
     @task
     def job_selection_task(self):
         return Task(
-            config=self.task_config['job_selection_task'],
+            config=self.tasks_config['job_selection_task'],
             output_pydantic=ChosenJob,
         )
 
     @task
     def resume_rewriting_task(self):
         return Task(
-            config=self.task_config['resume_rewriting_task']
+            config=self.tasks_config['resume_rewriting_task']
         )
 
     @task
     def company_research_task(self):
         return Task(
-            config=self.task_config['company_research_task'],
+            config=self.tasks_config['company_research_task'],
             context=[
                 self.job_selection_task(),
             ]
@@ -93,7 +92,7 @@ class JobHunterCrew:
     @task
     def interview_prep_task(self):
         return Task(
-            config=self.task_config['interview_prep_task'],
+            config=self.tasks_config['interview_prep_task'],
             context=[
                 self.job_selection_task(),
                 self.resume_rewriting_task(),
